@@ -24,3 +24,4 @@ template pylib(x, ver) =
 pylib "nimpatch", " ^= 0.1.1"
 pylib "errno", " ^= 0.1.0"
 pylib "handy_sugars", " ^= 0.1.0"
+pylib "jscompat", " ^= 0.1.3"
