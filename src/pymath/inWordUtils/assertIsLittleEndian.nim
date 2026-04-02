@@ -14,6 +14,7 @@ elif defined(nodejs):
     proc os_endianness(): cstring{.importNode(os, endianness).}
     func isLittleEndian*: bool =
       wrapVM os_endianness() == "LE"
+    collectImportNode()
 else:
   import ./jsTypedArray
   func isLittleEndian*: bool =
