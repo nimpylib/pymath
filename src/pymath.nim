@@ -6,6 +6,7 @@
 ## *NOTE*: Currently int is not acceptable when it comes to float about functions
 
 import pkg/nimpatch/nansign
+when defined(nimPreviewSlimSystem): import std/assertions
 import std/math
 import std/macros
 #from ../numTypes/ints/getter import bit_lengthUsingBitops

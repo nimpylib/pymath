@@ -14,7 +14,7 @@
  moshier@na-net.ornl.gov
  ```
 ]#
-
+when defined(nimPreviewSlimSystem): import std/assertions
 import std/math
 import ./consts
 import ./sinpi

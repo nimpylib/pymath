@@ -10,6 +10,7 @@ const
 const dunder_file = currentSourcePath()
 when defined(js):
   from std/strutils import rfind
+  when defined(nimPreviewSlimSystem): import std/assertions
   func restrict_parentDir(s: string): string {.compileTime.}=
     var idx = s.rfind '/'
     if idx == -1: idx = s.rfind '\\' 

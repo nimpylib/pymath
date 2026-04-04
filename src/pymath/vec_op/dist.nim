@@ -1,5 +1,5 @@
 
-
+when defined(nimPreviewSlimSystem): import std/assertions
 from std/math import frexp, sqrt
 from std/fenv import minimumPositiveValue
 from ../ldexp import c_ldexp
