@@ -121,6 +121,7 @@ proc vector_norm[F](n: Py_ssize_t; vec: var openarray[F]; max: F; found_nan: boo
   ## 7. Commutativity test:  https://bugs.python.org/file49448/test_hypot_commutativity.py
   ##
   ##
+  bind frexp
   var max_e: c_int
   if isinf(max):
     return max
@@ -220,6 +221,9 @@ proc math_dist_impl[T](p, q: OpenarrayOrNimIter[T]): float =
 
 func dist*[T; I: static[int]](p, q: array[I, T]): float{.raises: [].} =
   math_dist_impl(p, q, I)
+
+proc dist*[T](p, q: openArray[T]): float =
+  math_dist_impl(p, q)
 
 func dist*[A, B](p, q: (A, B)): float{.raises: [].} =
   math_dist_impl(
