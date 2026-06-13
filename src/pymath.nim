@@ -171,9 +171,9 @@ template py_math_isclose_impl*(abs) =
   if rel_tol < 0.0 or abs_tol < 0.0:
     raise newException(ValueError, "tolerances must be non-negative")
   if a == b:
-    return 1
+    return true
   if isinf(a) or isinf(b):
-    return 0
+    return false
   let diff = fabs(b - a)
   result =
     diff <= fabs(rel_tol * b) or
