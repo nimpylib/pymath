@@ -48,7 +48,7 @@ special case of zero input directly on all platforms.*/]#
   else: log1p(x_native=x)
 
 func log1p*[F: SomeFloat](x: F): F =
-  clikeOr(c_log1p(x), ct_log1p.log1p)
+  clikeOr(c_log1p(x), ct_log1p.log1p(x))
 
 
 impJsOrC expm1, expm1f, native_x
