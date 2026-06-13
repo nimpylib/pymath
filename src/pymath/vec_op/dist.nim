@@ -211,7 +211,7 @@ proc math_dist_impl[T](p, q: openarray[T], n: Py_ssize_t): float =
   result = vector_norm(n, diffs, max, found_nan)
 
 
-func math_dist_impl[T](p, q: OpenarrayOrNimIter[T]): float =
+proc math_dist_impl[T](p, q: OpenarrayOrNimIter[T]): float =
   when not openarray_Check(p):
     let p = toSeq(p)
   when not openarray_Check(q):

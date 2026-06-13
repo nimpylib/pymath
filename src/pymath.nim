@@ -420,7 +420,7 @@ type
       value is T
 
 
-func prod*[T](iterable: Iterable[T], start=1.T): T =
+proc prod*[T](iterable: Iterable[T], start=1.T): T =
   result = start
   for i in iterable:
     result *= i
@@ -428,7 +428,7 @@ func prod*[T](iterable: Iterable[T], start=1.T): T =
 
 const NUM_PARTIALS = 32
 
-func fsum*[T: SomeFloat](iterable: Iterable[T]): T =
+proc fsum*[T: SomeFloat](iterable: Iterable[T]): T =
 
   # translated from CPython v3.10.5 `Modules/mathmodule.c`
 

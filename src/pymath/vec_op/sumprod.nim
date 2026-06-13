@@ -133,7 +133,7 @@ template raiseNotSameLen =
 
 template Continue = continue
 
-func sumprod*[P, Q](p_it: ClosureIter[P]; q_it: ClosureIter[Q]): float =
+proc sumprod*[P, Q](p_it: ClosureIter[P]; q_it: ClosureIter[Q]): float =
   var
     p_i: P
     q_i: Q
