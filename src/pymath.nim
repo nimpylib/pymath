@@ -591,9 +591,9 @@ aliasFF asinh, arcsinh
 aliasFF acos, arccos
 aliasFF acosh, arccosh
 aliasFF atan, arctan
-aliasFF atan2, arctan2
 aliasFF atanh, arctanh
 
+func atan2*[F](x, y: F): F = arctan2(x, y)
 
 func comb*(n, k: int): int =
   ## .. hint:: Python's math.comb does not accept negative value for n, k
