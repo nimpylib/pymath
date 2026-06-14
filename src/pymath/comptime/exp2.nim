@@ -1,0 +1,156 @@
+
+##[
+compiletime/exp2.nim:
+
+  - based on the argument reduction and polynomial from
+    https://cygwin.com/cgit/newlib-cygwin/plain/newlib/libm/common/exp2.c
+
+  The upstream implementation uses a split table of 2^(k/N) values to stay
+  within a tight libm ULP budget.  This compile-time fallback keeps the same
+  N=128 reduction and exp2 polynomial, but reconstructs the table value with
+  a small 2^(j/N) table and ldexp scaling.
+]##
+
+##[
+   Copyright (c) 2018 Arm Ltd.  All rights reserved.
+
+   SPDX-License-Identifier: BSD-3-Clause
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are met:
+   1. Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+   2. Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+   3. The name of the company may not be used to endorse or promote products
+      derived from this software without specific prior written permission.
+
+   THIS SOFTWARE IS PROVIDED BY ARM LTD ``AS IS'' AND ANY EXPRESS OR IMPLIED
+   WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+   MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+   EVENT SHALL ARM LTD BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+   EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+   OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+   WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+]##
+
+from std/math import classify, FloatClass
+from ../ldexp import n_ldexp
+
+const
+  N = 128
+  invN = 1.0 / N.float
+  tiny = 1.0e-300
+  huge = 1.0e+300
+  exp2Tab = [
+    1.0000000000000000e+00, 1.0054299011128027e+00,
+    1.0108892860517005e+00, 1.0163783149109530e+00,
+    1.0218971486541166e+00, 1.0274459491187637e+00,
+    1.0330248790212284e+00, 1.0386341019613788e+00,
+    1.0442737824274138e+00, 1.0499440858006872e+00,
+    1.0556451783605572e+00, 1.0613772272892621e+00,
+    1.0671404006768237e+00, 1.0729348675259756e+00,
+    1.0787607977571199e+00, 1.0846183622133092e+00,
+    1.0905077326652577e+00, 1.0964290818163769e+00,
+    1.1023825833078409e+00, 1.1083684117236787e+00,
+    1.1143867425958924e+00, 1.1204377524096067e+00,
+    1.1265216186082418e+00, 1.1326385195987016e+00,
+    1.1387886347565686e+00, 1.1449721444313042e+00,
+    1.1511892299514550e+00, 1.1574400736308695e+00,
+    1.1637248587749203e+00, 1.1700437696867301e+00,
+    1.1763969916734021e+00, 1.1827847110522583e+00,
+    1.1892071151588049e+00, 1.1956643923549797e+00,
+    1.2021567320370915e+00, 1.2086843246432563e+00,
+    1.2152473616604539e+00, 1.2218460356320893e+00,
+    1.2284805401650910e+00, 1.2351510699373697e+00,
+    1.2418578207055594e+00, 1.2486009893124359e+00,
+    1.2553807736947118e+00, 1.2621973728909350e+00,
+    1.2690509870496560e+00, 1.2759418174374743e+00,
+    1.2828700664470463e+00, 1.2898359376050479e+00,
+    1.2968396355803387e+00, 1.3038813661920436e+00,
+    1.3109613364176748e+00, 1.3180797544012670e+00,
+    1.3252368294615224e+00, 1.3324327720999650e+00,
+    1.3396677930091007e+00, 1.3469421040805757e+00,
+    1.3542559184133378e+00, 1.3616094503217946e+00,
+    1.3690029153449753e+00, 1.3764365302556896e+00,
+    1.3839105130696094e+00, 1.3914250830543618e+00,
+    1.3989804607386289e+00, 1.4065768679212414e+00,
+    1.4142135623730951e+00, 1.4218912319027588e+00,
+    1.4296100984001446e+00, 1.4373703848545890e+00,
+    1.4451723153715850e+00, 1.4530161151892033e+00,
+    1.4609020106958815e+00, 1.4688302294472008e+00,
+    1.4768010001838920e+00, 1.4848145528497349e+00,
+    1.4928711186093532e+00, 1.5009709298663660e+00,
+    1.5091142202812061e+00, 1.5173012247898753e+00,
+    1.5255321796237590e+00, 1.5338073223300564e+00,
+    1.5421268917921437e+00, 1.5504911282495430e+00,
+    1.5589002733173005e+00, 1.5673545690059321e+00,
+    1.5758542587410378e+00, 1.5843995873837281e+00,
+    1.5929908012512028e+00, 1.6016281481370421e+00,
+    1.6103118773317764e+00, 1.6190422396433420e+00,
+    1.6278194874172700e+00, 1.6366438745578519e+00,
+    1.6455156565490330e+00, 1.6544350904756350e+00,
+    1.6634024350443676e+00, 1.6724179506051797e+00,
+    1.6814818991721944e+00, 1.6905945444448470e+00,
+    1.6997561518288266e+00, 1.7089669884576130e+00,
+    1.7182273232144529e+00, 1.7275374267548797e+00,
+    1.7368975715298976e+00, 1.7463080318091450e+00,
+    1.7557690837048609e+00, 1.7652810051965790e+00,
+    1.7748440761552394e+00, 1.7844585783673890e+00,
+    1.7941247955590572e+00, 1.8038430134196911e+00,
+    1.8136135196262340e+00, 1.8234366038676116e+00,
+    1.8333125578699916e+00, 1.8432416754237854e+00,
+    1.8532242524108496e+00, 1.8632605868323593e+00,
+    1.8733509788367469e+00, 1.8834957307474787e+00,
+    1.8936951470912271e+00, 1.9039495346259452e+00,
+    1.9142592023690357e+00, 1.9246244616258484e+00,
+    1.9350456260181111e+00, 1.9455230115123359e+00,
+    1.9560569364489370e+00, 1.9666477215711807e+00,
+    1.9772956900540239e+00, 1.9880011675334980e+00]
+
+func exp2Double(x: float): float =
+  let fc = classify(x)
+  case fc
+  of fcNan:
+    return x + x
+  of fcInf:
+    return if x < 0.0: 0.0 else: x
+  else:
+    discard
+
+  if x > 1024.0:
+    return huge * huge
+  if x < -1075.0:
+    return tiny * tiny
+  if abs(x) < 5.551115123125783e-17: ## 2^-54
+    return 1.0 + x
+
+  let z = x * N.float
+  let k = (if z >= 0.0: int(z + 0.5) else: int(z - 0.5))
+  let kdInt = k.float * invN
+  let r = x - kdInt
+  let r2 = r * r
+  let tmp =
+    r * 6.931471805599453e-01 +
+    r2 * (2.4022650695909065e-01 + r * 5.55041086686087e-02) +
+    r2 * r2 * (9.618131975721055e-03 + r * 1.3332074570119598e-03)
+
+  var j = k mod N
+  if j < 0:
+    j += N
+  let e = (k - j) div N
+  n_ldexp(exp2Tab[j] * (1.0 + tmp), e)
+
+func exp2*[F: SomeFloat](x: F): F =
+  when F is float32:
+    if x > 128.0'f32:
+      return Inf.F
+    if x < -150.0'f32:
+      return 0.0'f32
+    F(exp2Double(x.float))
+  else:
+    exp2Double(x)

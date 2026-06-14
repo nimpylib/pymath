@@ -16,13 +16,14 @@ from ./pymath/errnoUtils import
   prepareRWErrno, prepareROErrno, setErrno, setErrno0, getErrno, isErr, isErr0
 from ./pymath/ldexp import c_ldexp
 from ./pymath/cbrt import cbrt
+from ./pymath/exp2 import exp2
 import ./pymath/expm1_log1p
 export expm1_log1p
 import ./pymath/frexp as frexpLib
 import ./pymath/nextafter_ulp
 from pkg/errno/errnoConsts import ERANGE, EDOM
 
-export cbrt
+export cbrt, exp2
 export nextafter, ulp
 
 proc bit_lengthUsingBitops*(x: SomeInteger): int =
